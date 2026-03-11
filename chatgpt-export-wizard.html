@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatGPT History Mover</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --cream: #faf8f4;
+  --white: #ffffff;
+  --ink: #1a1814;
+  --ink2: #3d3a35;
+  --muted: #8a8680;
+  --border: #e8e4de;
+  --border2: #d4cfc8;
+  --amber: #e8a020;
+  --amber-light: #fef3dc;
+  --amber-dark: #c4840a;
+  --green: #2d7a4f;
+  --green-light: #e8f5ee;
+  --red: #c0392b;
+  --red-light: #fdecea;
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ── LAYOUT ── */
+.page { max-width: 900px; margin: 0 auto; padding: 48px 24px 80px; }
+
+/* ── HEADER ── */
+.header { text-align: center; margin-bottom: 48px; }
+.header-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--amber-light);
+  border: 1px solid #f0d090;
+  color: var(--amber-dark);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+h1 {
+  font-family: 'Lora', serif;
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1.15;
+  margin-bottom: 12px;
+}
+.header-sub { font-size: 17px; color: var(--muted); max-width: 480px; margin: 0 auto; line-height: 1.6; }
+
+/* ── STEPS ── */
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 40px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: 2px solid var(--border2);
+  background: var(--white);
+  color: var(--muted);
+}
+
+.step.active .step-num {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: white;
+}
+
+.step.done .step-num {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+
+.step-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: color 0.3s;
+}
+
+.step.active .step-label { color: var(--ink); }
+.step.done .step-label { color: var(--green); }
+
+.step-line {
+  width: 48px;
+  height: 2px;
+  background: var(--border);
+  margin: 0 4px;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.step-line.done { background: var(--green); }
+
+/* ── CARDS ── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: var(--shadow);
+}
+
+/* ── STEP 1: DROP ZONE ── */
+#step1 {}
+
+.drop-area {
+  border: 2px dashed var(--border2);
+  border-radius: 12px;
+  padding: 64px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--cream);
+  position: relative;
+}
+
+.drop-area:hover, .drop-area.over {
+  border-color: var(--amber);
+  background: var(--amber-light);
+}
+
+.drop-icon {
+  font-size: 52px;
+  margin-bottom: 20px;
+  display: block;
+  line-height: 1;
+}
+
+.drop-title {
+  font-family: 'Lora', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.drop-sub {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-amber {
+  background: var(--amber);
+  color: white;
+}
+.btn-amber:hover { background: var(--amber-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,160,32,0.35); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--ink2);
+  border: 1.5px solid var(--border2);
+}
+.btn-outline:hover { border-color: var(--ink2); }
+
+.btn-green {
+  background: var(--green);
+  color: white;
+}
+.btn-green:hover { background: #245f3e; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(45,122,79,0.3); }
+
+.btn-sm { padding: 8px 16px; font-size: 13px; }
+.btn-lg { padding: 16px 32px; font-size: 16px; }
+
+.how-it-works {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.how-item { text-align: center; }
+.how-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--amber-light);
+  color: var(--amber-dark);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+}
+.how-label { font-size: 13px; font-weight: 600; color: var(--ink2); margin-bottom: 4px; }
+.how-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* ── PROGRESS ── */
+#step-progress {
+  display: none;
+  text-align: center;
+  padding: 48px 40px;
+}
+
+.progress-icon { font-size: 40px; margin-bottom: 16px; animation: spin 2s linear infinite; display: block; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.progress-title {
+  font-family: 'Lora', serif;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.progress-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+
+.progress-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  max-width: 400px;
+  margin: 0 auto 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber), #f5c842);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.progress-count { font-size: 13px; color: var(--muted); }
+
+/* ── STEP 2: PICKER ── */
+#step2 { display: none; }
+
+.picker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.picker-title {
+  font-family: 'Lora', serif;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.picker-sub { font-size: 14px; color: var(--muted); }
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+
+.search-box::before {
+  content: '🔍';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--cream);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.search-box input:focus { border-color: var(--amber); background: white; }
+.search-box input::placeholder { color: var(--muted); }
+
+.filter-btn {
+  padding: 9px 14px;
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  background: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--ink2);
+  transition: all 0.15s;
+}
+.filter-btn:hover, .filter-btn.active { border-color: var(--amber); color: var(--amber-dark); background: var(--amber-light); }
+
+.selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--amber-light);
+  border: 1px solid #f0d090;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.selection-info {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--amber-dark);
+}
+
+.selection-actions { display: flex; gap: 8px; }
+
+.conv-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+
+.conv-grid::-webkit-scrollbar { width: 4px; }
+.conv-grid::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.conv-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: var(--white);
+  user-select: none;
+}
+
+.conv-card:hover { border-color: var(--border2); background: var(--cream); }
+
+.conv-card.selected {
+  border-color: var(--green);
+  background: var(--green-light);
+}
+
+.conv-card.excluded {
+  opacity: 0.45;
+  background: var(--cream);
+}
+
+.conv-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 2px solid var(--border2);
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  background: white;
+}
+
+.conv-card.selected .conv-checkbox {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+
+.conv-card.selected .conv-checkbox::after { content: '✓'; font-size: 12px; font-weight: 700; }
+
+.conv-body { flex: 1; min-width: 0; }
+
+.conv-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.conv-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.conv-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-recent { background: var(--green-light); color: var(--green); }
+.badge-long { background: var(--blue-light); color: var(--blue); }
+.badge-old { background: #f5f5f5; color: var(--muted); }
+
+.conv-preview {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-meta-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.conv-meta-item {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ── STEP 3: EXPORT ── */
+#step3 { display: none; }
+
+.export-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.summary-card {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.summary-num {
+  font-family: 'Lora', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.summary-label { font-size: 13px; color: var(--muted); }
+
+.export-options {
+  margin-bottom: 28px;
+}
+
+.export-options-title {
+  font-family: 'Lora', serif;
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.llm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.llm-card {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  background: var(--white);
+}
+
+.llm-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.llm-card.selected { border-color: var(--amber); background: var(--amber-light); }
+
+.llm-emoji { font-size: 28px; margin-bottom: 8px; display: block; }
+.llm-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.llm-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+.export-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--ink);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  transition: all 0.25s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 200;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── UTILITY ── */
+.hidden { display: none !important; }
+.highlight { background: #fde68a; border-radius: 2px; padding: 0 2px; }
+
+@media (max-width: 600px) {
+  .card { padding: 24px 20px; }
+  .how-it-works { grid-template-columns: 1fr; }
+  .export-summary { grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .summary-num { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-eyebrow">✦ Free · Private · No Upload</div>
+    <h1>Move your ChatGPT history<br>to any AI</h1>
+    <p class="header-sub">Drop your ChatGPT export, choose what to keep, and download a clean file ready for Claude, Gemini, or any AI.</p>
+  </div>
+
+  <!-- STEP INDICATORS -->
+  <div class="steps" id="step-indicators">
+    <div class="step active" id="ind-1">
+      <div class="step-num">1</div>
+      <div class="step-label">Upload</div>
+    </div>
+    <div class="step-line" id="line-1"></div>
+    <div class="step" id="ind-2">
+      <div class="step-num">2</div>
+      <div class="step-label">Choose</div>
+    </div>
+    <div class="step-line" id="line-2"></div>
+    <div class="step" id="ind-3">
+      <div class="step-num">3</div>
+      <div class="step-label">Export</div>
+    </div>
+  </div>
+
+  <!-- ── STEP 1 ── -->
+  <div class="card" id="step1">
+    <div class="drop-area" id="drop-area">
+      <span class="drop-icon">🗂️</span>
+      <div class="drop-title">Drop your ChatGPT export ZIP here</div>
+      <div class="drop-sub">
+        The .zip file you downloaded from ChatGPT settings<br>
+        <span style="font-size:13px">Works with all export formats · Your data never leaves your device</span>
+      </div>
+      <button class="btn btn-amber" onclick="document.getElementById('zipInput').click()">
+        Choose ZIP file
+      </button>
+      <input type="file" id="zipInput" accept=".zip" style="display:none">
+    </div>
+
+    <div class="how-it-works">
+      <div class="how-item">
+        <div class="how-num">1</div>
+        <div class="how-label">Get your export</div>
+        <div class="how-sub">ChatGPT Settings → Data Controls → Export Data</div>
+      </div>
+      <div class="how-item">
+        <div class="how-num">2</div>
+        <div class="how-label">Drop it here</div>
+        <div class="how-sub">Upload the .zip file you receive by email</div>
+      </div>
+      <div class="how-item">
+        <div class="how-num">3</div>
+        <div class="how-label">Pick & export</div>
+        <div class="how-sub">Choose conversations and download for any AI</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROGRESS ── -->
+  <div class="card" id="step-progress">
+    <span class="progress-icon">⚙️</span>
+    <div class="progress-title">Reading your conversations…</div>
+    <div class="progress-sub" id="progress-sub">Opening ZIP file…</div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress-count" id="progress-count"></div>
+  </div>
+
+  <!-- ── STEP 2 ── -->
+  <div class="card" id="step2">
+    <div class="picker-header">
+      <div>
+        <div class="picker-title">Choose what to keep</div>
+        <div class="picker-sub">Check the conversations you want to include in your export. Uncheck anything you don't need.</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="goBack()">← Start Over</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="search" placeholder="Search conversations…" oninput="handleSearch(this.value)">
+      </div>
+      <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">All</button>
+      <button class="filter-btn" id="filter-recent" onclick="setFilter('recent')">Recent (90 days)</button>
+      <button class="filter-btn" id="filter-long" onclick="setFilter('long')">Long chats</button>
+    </div>
+
+    <div class="selection-bar">
+      <div class="selection-info" id="sel-info">0 conversations selected</div>
+      <div class="selection-actions">
+        <button class="btn btn-outline btn-sm" onclick="selectAll()">Select All</button>
+        <button class="btn btn-outline btn-sm" onclick="selectNone()">Deselect All</button>
+        <button class="btn btn-outline btn-sm" onclick="selectRecent()">Select Recent</button>
+      </div>
+    </div>
+
+    <div class="conv-grid" id="conv-grid"></div>
+
+    <div style="display:flex; justify-content:flex-end; margin-top:20px; padding-top:20px; border-top:1px solid var(--border);">
+      <button class="btn btn-green btn-lg" onclick="goToExport()">
+        Continue to Export →
+      </button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3 ── -->
+  <div class="card" id="step3">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+      <div>
+        <div class="picker-title">Export your conversations</div>
+        <div class="picker-sub">Choose your destination AI and download your file.</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="goStep(2)">← Back</button>
+    </div>
+
+    <div class="export-summary">
+      <div class="summary-card">
+        <div class="summary-num" id="exp-conv">0</div>
+        <div class="summary-label">Conversations</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-num" id="exp-msgs">0</div>
+        <div class="summary-label">Messages</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-num" id="exp-size">0kb</div>
+        <div class="summary-label">Est. file size</div>
+      </div>
+    </div>
+
+    <div class="export-options">
+      <div class="export-options-title">Where are you sending this?</div>
+      <div class="llm-grid">
+        <div class="llm-card selected" onclick="selectLLM(this,'claude')" data-llm="claude">
+          <span class="llm-emoji">✦</span>
+          <div class="llm-name">Claude</div>
+          <div class="llm-desc">Formatted for easy pasting into Claude.ai</div>
+        </div>
+        <div class="llm-card" onclick="selectLLM(this,'chatgpt')" data-llm="chatgpt">
+          <span class="llm-emoji">💬</span>
+          <div class="llm-name">ChatGPT</div>
+          <div class="llm-desc">Back to ChatGPT or a different account</div>
+        </div>
+        <div class="llm-card" onclick="selectLLM(this,'gemini')" data-llm="gemini">
+          <span class="llm-emoji">💎</span>
+          <div class="llm-name">Gemini</div>
+          <div class="llm-desc">Formatted for Google Gemini</div>
+        </div>
+        <div class="llm-card" onclick="selectLLM(this,'text')" data-llm="text">
+          <span class="llm-emoji">📄</span>
+          <div class="llm-name">Plain Text</div>
+          <div class="llm-desc">Clean readable file for any use</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="export-actions">
+      <button class="btn btn-green btn-lg" onclick="doExport()">
+        ⬇ Download Export File
+      </button>
+      <span style="font-size:13px; color:var(--muted)">File downloads to your computer</span>
+    </div>
+
+    <div id="paste-tip" style="margin-top:20px; padding:16px; background:var(--amber-light); border:1px solid #f0d090; border-radius:10px; font-size:14px; color:var(--amber-dark); display:none;">
+      <strong>💡 How to use with Claude:</strong> Download the file, then open a new Claude chat, click the paperclip icon, and upload the file. Or open it in a text editor and paste the contents directly.
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let allConvs = [];       // all parsed conversations
+let filtered = [];       // currently displayed
+let selected = new Set(); // IDs of selected convs
+let currentFilter = 'all';
+let searchQuery = '';
+let selectedLLM = 'claude';
+
+// ── FILE HANDLING ──────────────────────────────────────────────────────────────
+const dropArea = document.getElementById('drop-area');
+const zipInput = document.getElementById('zipInput');
+
+dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.classList.add('over'); });
+dropArea.addEventListener('dragleave', () => dropArea.classList.remove('over'));
+dropArea.addEventListener('drop', e => {
+  e.preventDefault();
+  dropArea.classList.remove('over');
+  const file = [...e.dataTransfer.files].find(f => f.name.endsWith('.zip'));
+  if (file) loadZip(file);
+  else showToast('Please drop a .zip file');
+});
+zipInput.addEventListener('change', e => { if (e.target.files[0]) loadZip(e.target.files[0]); });
+
+async function loadZip(file) {
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step-progress').style.display = 'block';
+  setProgress(5, 'Opening ZIP file…', '');
+
+  try {
+    const zip = await JSZip.loadAsync(file);
+    setProgress(15, 'Scanning files…', '');
+
+    const files = Object.values(zip.files).filter(f => !f.dir);
+    const conversations = [];
+
+    // Detect format
+    const oldFormat = files.find(f => f.name.endsWith('conversations.json') && !f.name.includes('/conversations.json'.slice(1)));
+    const convJsonFiles = files.filter(f => f.name.match(/[^/]+\/[^/]+\/conversation\.json$/));
+
+    if (oldFormat) {
+      // Old single-file format
+      setProgress(30, 'Reading conversation history…', '');
+      const text = await oldFormat.async('string');
+      setProgress(70, 'Parsing conversations…', '');
+      const data = JSON.parse(text);
+      if (Array.isArray(data)) conversations.push(...data);
+    } else if (convJsonFiles.length > 0) {
+      // New per-conversation format
+      const total = convJsonFiles.length;
+      for (let i = 0; i < total; i++) {
+        const f = convJsonFiles[i];
+        try {
+          const text = await f.async('string');
+          const data = JSON.parse(text);
+          if (data.mapping || data.title !== undefined) conversations.push(data);
+        } catch(e) {}
+        if (i % 10 === 0) setProgress(15 + Math.round((i/total)*70), `Reading conversations… ${i+1} of ${total}`, `${conversations.length} found`);
+      }
+    } else {
+      // Fallback: any json files that look like conversations
+      const jsonFiles = files.filter(f => f.name.endsWith('.json'));
+      const skip = new Set(['export_manifest.json','user.json','user_settings.json','shared_conversations.json']);
+      const candidates = jsonFiles.filter(f => !skip.has(f.name.split('/').pop()));
+      for (let i = 0; i < candidates.length; i++) {
+        try {
+          const text = await candidates[i].async('string');
+          const data = JSON.parse(text);
+          if (Array.isArray(data)) data.forEach(d => { if (d.title) conversations.push(d); });
+          else if (data.title || data.mapping) conversations.push(data);
+        } catch(e) {}
+      }
+    }
+
+    setProgress(95, 'Organizing…', `${conversations.length} conversations found`);
+    await delay(300);
+
+    if (conversations.length === 0) {
+      document.getElementById('step-progress').style.display = 'none';
+      document.getElementById('step1').style.display = 'block';
+      alert("Couldn't find any conversations in this ZIP file. Make sure you're uploading the ZIP that ChatGPT emailed you.");
+      return;
+    }
+
+    finishLoading(conversations);
+  } catch(err) {
+    document.getElementById('step-progress').style.display = 'none';
+    document.getElementById('step1').style.display = 'block';
+    alert('Something went wrong reading the file. Make sure it\'s the original ZIP from ChatGPT.');
+    console.error(err);
+  }
+}
+
+function finishLoading(conversations) {
+  allConvs = conversations.map((c, i) => ({
+    id: c.id || `conv_${i}`,
+    raw: c,
+    title: c.title || 'Untitled conversation',
+    msgs: extractMessages(c),
+    date: getDate(c),
+    preview: getPreview(c),
+  }));
+
+  // Default: select all
+  allConvs.forEach(c => selected.add(c.id));
+
+  document.getElementById('step-progress').style.display = 'none';
+  goStep(2);
+  applyFilter();
+}
+
+// ── MESSAGE EXTRACTION ─────────────────────────────────────────────────────────
+function extractMessages(conv) {
+  const msgs = [];
+  if (!conv.mapping) return msgs;
+
+  function traverse(nodeId, visited = new Set()) {
+    if (!nodeId || visited.has(nodeId)) return;
+    visited.add(nodeId);
+    const node = conv.mapping[nodeId];
+    if (!node) return;
+    const msg = node.message;
+    if (msg?.content?.author || msg?.author) {
+      const author = msg.author || msg.content?.author;
+      const role = author?.role;
+      if (role === 'user' || role === 'assistant') {
+        let text = '';
+        const parts = msg.content?.parts;
+        if (parts) text = parts.filter(p => typeof p === 'string').join('');
+        else if (typeof msg.content?.text === 'string') text = msg.content.text;
+        if (text.trim()) msgs.push({ role, text: text.trim() });
+      }
+    }
+    if (node.children?.length) node.children.forEach(c => traverse(c, visited));
+  }
+
+  const root = Object.values(conv.mapping).find(n => !n.parent || n.parent === null);
+  if (root) traverse(root.id);
+  return msgs;
+}
+
+function getDate(conv) {
+  if (conv.create_time) return new Date(conv.create_time * 1000);
+  if (conv.update_time) return new Date(conv.update_time * 1000);
+  return new Date(0);
+}
+
+function formatDate(d) {
+  if (!d || d.getTime() === 0) return '';
+  const now = new Date();
+  const diff = now - d;
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) return `${Math.floor(days/7)}w ago`;
+  if (days < 365) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+function getPreview(conv) {
+  const msgs = extractMessages(conv);
+  const first = msgs.find(m => m.role === 'user');
+  return first ? first.text.slice(0, 100) : '';
+}
+
+// ── RENDERING ─────────────────────────────────────────────────────────────────
+function applyFilter() {
+  const q = searchQuery.toLowerCase();
+  const now = Date.now();
+  const ninetyDays = 90 * 24 * 3600 * 1000;
+
+  filtered = allConvs.filter(c => {
+    if (currentFilter === 'recent' && (now - c.date.getTime()) > ninetyDays) return false;
+    if (currentFilter === 'long' && c.msgs.length < 10) return false;
+    if (q && !c.title.toLowerCase().includes(q) && !c.preview.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  renderList();
+  updateSelectionBar();
+}
+
+function renderList() {
+  const grid = document.getElementById('conv-grid');
+  const q = searchQuery.toLowerCase();
+  const now = Date.now();
+  const ninetyDays = 90 * 24 * 3600 * 1000;
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="no-results">No conversations match your search.</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.slice(0, 300).map(c => {
+    const isSelected = selected.has(c.id);
+    const isRecent = (now - c.date.getTime()) < ninetyDays;
+    const isLong = c.msgs.length >= 10;
+    let badge = '';
+    if (isRecent) badge = '<span class="conv-badge badge-recent">Recent</span>';
+    else if (isLong) badge = '<span class="conv-badge badge-long">Long</span>';
+    else badge = '<span class="conv-badge badge-old">Older</span>';
+
+    let title = c.title;
+    if (q && title.toLowerCase().includes(q)) {
+      title = title.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<span class="highlight">$1</span>');
+    }
+
+    return `<div class="conv-card ${isSelected ? 'selected' : 'excluded'}" onclick="toggleConv('${c.id}')" data-id="${c.id}">
+      <div class="conv-checkbox"></div>
+      <div class="conv-body">
+        <div class="conv-title-row">
+          <div class="conv-name">${title}</div>
+          ${badge}
+        </div>
+        ${c.preview ? `<div class="conv-preview">${c.preview}</div>` : ''}
+        <div class="conv-meta-row">
+          <span class="conv-meta-item">💬 ${c.msgs.length} messages</span>
+          ${c.date.getTime() > 0 ? `<span class="conv-meta-item">📅 ${formatDate(c.date)}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateSelectionBar() {
+  const visibleSelected = filtered.filter(c => selected.has(c.id)).length;
+  const total = selected.size;
+  document.getElementById('sel-info').textContent =
+    `${total} of ${allConvs.length} conversations selected`;
+}
+
+// ── SELECTION ──────────────────────────────────────────────────────────────────
+function toggleConv(id) {
+  if (selected.has(id)) selected.delete(id);
+  else selected.add(id);
+  // Update just this card visually
+  const card = document.querySelector(`.conv-card[data-id="${id}"]`);
+  if (card) {
+    card.classList.toggle('selected', selected.has(id));
+    card.classList.toggle('excluded', !selected.has(id));
+  }
+  updateSelectionBar();
+}
+
+function selectAll() {
+  filtered.forEach(c => selected.add(c.id));
+  renderList();
+  updateSelectionBar();
+}
+
+function selectNone() {
+  filtered.forEach(c => selected.delete(c.id));
+  renderList();
+  updateSelectionBar();
+}
+
+function selectRecent() {
+  const now = Date.now();
+  const ninetyDays = 90 * 24 * 3600 * 1000;
+  allConvs.forEach(c => {
+    if ((now - c.date.getTime()) < ninetyDays) selected.add(c.id);
+    else selected.delete(c.id);
+  });
+  renderList();
+  updateSelectionBar();
+}
+
+// ── FILTER / SEARCH ────────────────────────────────────────────────────────────
+let searchTimer;
+function handleSearch(val) {
+  searchQuery = val;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilter, 200);
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('filter-' + f).classList.add('active');
+  applyFilter();
+}
+
+// ── LLM SELECTION ──────────────────────────────────────────────────────────────
+function selectLLM(el, llm) {
+  document.querySelectorAll('.llm-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedLLM = llm;
+  const tip = document.getElementById('paste-tip');
+  tip.style.display = llm === 'claude' ? 'block' : 'none';
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function goToExport() {
+  if (selected.size === 0) { showToast('Please select at least one conversation'); return; }
+  const selConvs = allConvs.filter(c => selected.has(c.id));
+  const totalMsgs = selConvs.reduce((a, c) => a + c.msgs.length, 0);
+  const estText = buildExportText(selConvs, 'text');
+  const estSize = new Blob([estText]).size;
+  document.getElementById('exp-conv').textContent = selConvs.length.toLocaleString();
+  document.getElementById('exp-msgs').textContent = totalMsgs.toLocaleString();
+  document.getElementById('exp-size').textContent = estSize > 1024*1024
+    ? (estSize/1024/1024).toFixed(1) + 'mb'
+    : Math.round(estSize/1024) + 'kb';
+  goStep(3);
+}
+
+function buildExportText(convs, format) {
+  const lines = [];
+
+  if (format === 'claude') {
+    lines.push('# My ChatGPT Conversation History');
+    lines.push('');
+    lines.push('Below are my past conversations exported from ChatGPT. I\'m sharing these so you have context about topics I\'ve explored, projects I\'ve worked on, and my communication style.');
+    lines.push('');
+    lines.push(`Total conversations: ${convs.length}`);
+    lines.push('---');
+    lines.push('');
+  } else if (format === 'gemini') {
+    lines.push('# ChatGPT Export for Gemini');
+    lines.push('');
+    lines.push('The following are my conversations from ChatGPT. Please use these to understand my interests and continue helping me.');
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+  } else {
+    lines.push('# ChatGPT Conversation Export');
+    lines.push(`Exported: ${new Date().toLocaleDateString()}`);
+    lines.push(`Conversations: ${convs.length}`);
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+  }
+
+  convs.forEach((c, i) => {
+    lines.push(`## Conversation ${i+1}: ${c.title}`);
+    if (c.date.getTime() > 0) lines.push(`Date: ${c.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`);
+    lines.push(`Messages: ${c.msgs.length}`);
+    lines.push('');
+    c.msgs.forEach(m => {
+      const speaker = m.role === 'user' ? 'Me' : 'ChatGPT';
+      lines.push(`**${speaker}:** ${m.text}`);
+      lines.push('');
+    });
+    lines.push('---');
+    lines.push('');
+  });
+
+  return lines.join('\n');
+}
+
+function doExport() {
+  const selConvs = allConvs.filter(c => selected.has(c.id));
+  const text = buildExportText(selConvs, selectedLLM);
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `chatgpt-export-for-${selectedLLM}-${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Downloaded!');
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function goStep(n) {
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step-progress').style.display = 'none';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step3').style.display = 'none';
+
+  if (n === 1) document.getElementById('step1').style.display = 'block';
+  if (n === 2) document.getElementById('step2').style.display = 'block';
+  if (n === 3) document.getElementById('step3').style.display = 'block';
+
+  // Update step indicators
+  for (let i = 1; i <= 3; i++) {
+    const ind = document.getElementById(`ind-${i}`);
+    ind.classList.remove('active', 'done');
+    if (i < n) ind.classList.add('done');
+    else if (i === n) ind.classList.add('active');
+  }
+  for (let i = 1; i <= 2; i++) {
+    const line = document.getElementById(`line-${i}`);
+    line.classList.toggle('done', i < n);
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goBack() {
+  allConvs = [];
+  selected.clear();
+  document.getElementById('zipInput').value = '';
+  goStep(1);
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
+function setProgress(pct, title, count) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.querySelector('.progress-title').textContent = title;
+  document.getElementById('progress-count').textContent = count;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
